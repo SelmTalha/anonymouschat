@@ -19,11 +19,16 @@ joinBtn.addEventListener('click', () => {
     if (!username || !room) return alert('Kullanıcı adı ve oda gerekli');
 
     chatContainer.style.display = 'block';
-    socket = io.connect('http://localhost:3000');
+
+    // 🔑 localhost sabitini kaldırdık → Render’da kendi origin üzerinden bağlanır
+    socket = io.connect();
 
     socket.emit('joinRoom', { username, room });
 
     setupChat();
+
+    // Sayfa açıldığında mesaj inputuna otomatik focus
+    message.focus();
 });
 
 // --- Chat ve typing setup ---
@@ -54,23 +59,19 @@ function setupChat() {
     });
 
     // Yazıyor bildirisi
-message.addEventListener('keydown', (e) => {
-    if(e.key === "Enter" && message.value.trim() !== "") {
-        socket.emit('chat', { message: message.value });
-        message.value = "";
-    } else {
-        // Yazıyor bildirisi
-        socket.emit('typing');
-    }
-});
+    message.addEventListener('keydown', (e) => {
+        if (e.key === "Enter" && message.value.trim() !== "") {
+            socket.emit('chat', { message: message.value });
+            message.value = "";
+        } else {
+            // Yazıyor bildirisi
+            socket.emit('typing');
+        }
+    });
 
     socket.on('typing', (data) => {
         if (data !== usernameInput.value) {
             feedback.innerHTML = `<p class="typing"><em>${data} yazıyor...</em></p>`;
         }
     });
-    // Sayfa açıldığında mesaj inputuna otomatik focus
-
-
 }
-
