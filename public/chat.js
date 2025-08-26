@@ -21,7 +21,7 @@ joinBtn.addEventListener('click', () => {
     chatContainer.style.display = 'block';
 
     // 🔑 localhost sabitini kaldırdık → Render’da kendi origin üzerinden bağlanır
-    socket = io.connect();
+    socket = io;
 
     socket.emit('joinRoom', { username, room });
 

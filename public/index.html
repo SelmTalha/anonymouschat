@@ -95,7 +95,7 @@ joinBtn.addEventListener('click', () => {
     sender.value = username;              // ad inputa otomatik yazılır
 
     // Socket.io bağlan ve odaya katıl
-    socket = io.connect('http://localhost:3000');
+    socket = io;
     socket.emit('joinRoom', { username, room });
 
     setupChat(); // mevcut chat.js mantığını çağır
