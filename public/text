@@ -1,0 +1,13 @@
+// Animasyon fonksiyonu
+function animateStars() {
+    starArray.forEach(star => {
+        let top = parseFloat(star.dataset.top);
+        let speed = parseFloat(star.dataset.speed);
+        top += speed;
+        if(top > 100) top = 0; // Ekranın altına inince yukarıdan başlat
+        star.dataset.top = top;
+        star.style.top = top + 'vh';
+    });
+    requestAnimationFrame(animateStars);
+}
+animateStars();

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>ST CHAT</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.8.1/socket.io.js" integrity="sha512-8BHxHDLsOHx+flIrQ0DrZcea7MkHqRU5GbTHmbdzMRnAaoCIkZ97PqZcXJkKZckMMhqfoeaJE+DNUVuyoQsO3Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel='stylesheet' type='text/css' media='screen' href='style.css'>
+</head>
+<body>
+    
+    <!-- Popup Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h2>ST CHAT - Giriş</h2>
+            <input type="text" id="username" placeholder="Kullanıcı Adı">
+            <input type="text" id="room" placeholder="Oda Adı">
+            <button id="joinBtn">Sohbete Başla</button>
+        </div>
+    </div>
+
+    <!-- Mevcut chat paneli -->
+    <div id="chat-wrap" style="display:none;">
+        <h2>ST CHAT</h2>
+        <div id="chat-window">
+            <div id="output"></div>
+            <div id="feedback"></div>
+        </div>
+        <input type="text" id="sender"  placeholder="Ad">
+        <input type="text" id="message" placeholder="Mesaj">
+        <button id="submitBtn">Gönder</button>
+
+        <!-- Yıldız animasyonu -->
+        <div class="stars"></div>
+    </div>
+
+<script>
+/* ---------------- YILDIZLAR ---------------- */
+const starCount = 80;
+const stars = document.querySelector('.stars');
+const starArray = [];
+
+for(let i=0; i<starCount; i++){
+    const star = document.createElement('div');
+    star.style.position = 'absolute';
+    star.style.width = '2px';
+    star.style.height = '2px';
+    star.style.borderRadius = '50%';
+    star.style.background = 'rgba(255,255,255,0.8)';
+    star.style.boxShadow = `0 0 8px 2px #fff`;
+    star.style.opacity = Math.random()*0.8+0.2;
+    const top = Math.random()*100;
+    const left = Math.random()*120;
+    const speed = 0.05 + Math.random()*0.15;
+    star.dataset.top = top;
+    star.dataset.left = left;
+    star.dataset.speed = speed;
+    star.style.top = top + 'vh';
+    star.style.left = left + 'vw';
+    stars.appendChild(star);
+    starArray.push(star);
+}
+
+function animateStars() {
+    starArray.forEach(star => {
+        let top = parseFloat(star.dataset.top);
+        let speed = parseFloat(star.dataset.speed);
+        top += speed;
+        if(top > 100) top = 0;
+        star.dataset.top = top;
+        star.style.top = top + 'vh';
+    });
+    requestAnimationFrame(animateStars);
+}
+animateStars();
+
+/* ---------------- POPUP LOGIC ---------------- */
+const loginModal = document.getElementById('loginModal');
+const usernameInput = document.getElementById('username');
+const roomInput = document.getElementById('room');
+const joinBtn = document.getElementById('joinBtn');
+const chatWrap = document.getElementById('chat-wrap');
+const sender = document.getElementById('sender');
+
+let socket;
+
+joinBtn.addEventListener('click', () => {
+    const username = usernameInput.value.trim();
+    const room = roomInput.value.trim();
+    if(!username || !room) return alert('Kullanıcı adı ve oda gerekli');
+
+    loginModal.style.display = 'none';   // popup kapanır
+    chatWrap.style.display = 'block';     // chat görünür
+    sender.value = username;              // ad inputa otomatik yazılır
+
+    // Socket.io bağlan ve odaya katıl
+    socket = io.connect('http://localhost:3000');
+    socket.emit('joinRoom', { username, room });
+
+    setupChat(); // mevcut chat.js mantığını çağır
+});
+
+function setupChat() {
+    const message = document.getElementById('message');
+    const submitBtn = document.getElementById('submitBtn');
+    const output = document.getElementById('output');
+    const feedback = document.getElementById('feedback');
+
+    submitBtn.addEventListener('click', () => {
+        if(message.value.trim() !== "") {
+            socket.emit('chat', { message: message.value });
+            message.value = "";
+        }
+    });
+
+    socket.on('chat', (data) => {
+        feedback.innerHTML = "";
+        const position = data.sender === usernameInput.value ? "right" : "left";
+        const div = document.createElement('div');
+        div.className = `message ${position}`;
+        div.innerHTML = `<p><strong>${data.sender}:</strong> ${data.message}</p>`;
+        output.appendChild(div);
+        output.scrollTop = output.scrollHeight;
+    });
+
+    message.addEventListener('keypress', () => {
+        socket.emit('typing');
+    });
+
+    socket.on('typing', (data) => {
+        if(data !== usernameInput.value) {
+            feedback.innerHTML = `<p class="typing"><em>${data} yazıyor...</em></p>`;
+        }
+    });
+}
+</script>
+
+<script src='chat.js'></script>
+</body>
+</html>
